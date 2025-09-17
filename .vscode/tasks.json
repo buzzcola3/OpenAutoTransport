@@ -1,0 +1,46 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build with Bazel: open_auto_transport",
+			"type": "shell",
+			"command": "bazel",
+			"args": [
+				"build",
+				"//:open_auto_transport"
+			],
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build with Bazel: open_auto_transport",
+			"type": "shell",
+			"command": "bazel",
+			"args": [
+				"build",
+				"//:open_auto_transport",
+				"--verbose_failures"
+			],
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build with Bazel: open_auto_transport",
+			"type": "shell",
+			"command": "bazel",
+			"args": [
+				"build",
+				"//:open_auto_transport",
+				"--verbose_failures"
+			],
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build"
+		}
+	]
+}
