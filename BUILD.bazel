@@ -10,12 +10,15 @@ genrule(
         "@capnp-cpp//src/capnp:capnpc-c++",
     ],
     cmd = """
-      mkdir -p $(@D)/transport && \
-      $(location @capnp-cpp//src/capnp:capnp_tool) compile \
-        --src-prefix=. \
-        -o$(location @capnp-cpp//src/capnp:capnpc-c++):$(@D)/transport \
-        $(location wire.capnp) && \
-      mv $(@D)/transport/wire.capnp.h $(@D)/transport/wire.capnp.c++ $(@D)/
+      set -euo pipefail
+      SRC="$(location :wire.capnp)"
+      SRCDIR="$$(dirname "$$SRC")"
+      OUTDIR="$(@D)"
+      mkdir -p "$$OUTDIR"
+      "$(location @capnp-cpp//src/capnp:capnp_tool)" compile \
+        -I "$$SRCDIR" \
+        -o"$(location @capnp-cpp//src/capnp:capnpc-c++)":"$$OUTDIR" \
+        "$$SRC"
     """,
     visibility = ["//visibility:public"],
 )
@@ -36,7 +39,7 @@ cc_library(
     name = "open_auto_transport",
     srcs = ["transport.cpp"],
     hdrs = ["transport.hpp", "wire.hpp"],
-    copts = ["-fPIC"],
+    copts = ["-fPIC", "-Ishared_memory"],
     deps = [
         ":wire_capnp",
         "//shared_memory:duplex_shm_transport",
@@ -50,6 +53,7 @@ cc_library(
 cc_binary(
     name = "open_auto_transport_demo",
     srcs = ["transport_demo.cpp"],
+    copts = ["-Ishared_memory"],
     deps = [
         ":open_auto_transport",
         ":wire_capnp",
