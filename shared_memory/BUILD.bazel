@@ -1,0 +1,24 @@
+cc_library(
+    name = "duplex_shm_transport",
+    srcs = [
+        "duplex_shm_transport.cpp",
+    ],
+    hdrs = [
+        "duplex_shm_transport.hpp",
+    ],
+    include_prefix = "shared_memory",
+    visibility = ["//visibility:public"],
+    copts = ["-std=c++17"],
+    linkopts = ["-pthread"],
+    deps = [
+        "@boost.asio",
+        "@boost.interprocess",
+    ],
+)
+
+cc_binary(
+    name = "duplex_shm_transport_demo",
+    srcs = ["duplex_shm_transport_demo.cpp"],
+    deps = [":duplex_shm_transport"],
+    linkopts = ["-pthread", "-lrt"],
+)

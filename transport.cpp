@@ -22,7 +22,7 @@
 
 #include <capnp/serialize.h>
 #include <capnp/message.h>
-#include "capnproto_shm_transport.hpp"
+#include "shared_memory/duplex_shm_transport.hpp"
 
 #include <cstring>
 #include <iostream>
@@ -46,9 +46,9 @@ bool Transport::startAsA(std::chrono::microseconds poll, bool clean) {
 
   try {
     if (clean) {
-      capnproto_shm_transport::ShmFixedSlotDuplexTransport::remove(kName);
+      duplex_shm_transport::ShmFixedSlotDuplexTransport::remove(kName);
     }
-    shm_ = std::make_unique<capnproto_shm_transport::ShmFixedSlotDuplexTransport>(
+    shm_ = std::make_unique<duplex_shm_transport::ShmFixedSlotDuplexTransport>(
         kName,
         kSlotSize,
         kSlotCount,
@@ -75,13 +75,13 @@ bool Transport::startAsB(std::chrono::milliseconds wait, std::chrono::microsecon
     return side_ == Side::B;
 
   try {
-    auto opened = capnproto_shm_transport::ShmFixedSlotDuplexTransport::open(
+    auto opened = duplex_shm_transport::ShmFixedSlotDuplexTransport::open(
         kName,
         wait,
         [this](const uint8_t* data, uint64_t len) { this->handleIncomingSlot(data, len); },
         poll
     );
-    shm_ = std::make_unique<capnproto_shm_transport::ShmFixedSlotDuplexTransport>(
+    shm_ = std::make_unique<duplex_shm_transport::ShmFixedSlotDuplexTransport>(
         std::move(opened));
     running_.store(true, std::memory_order_relaxed);
     side_ = Side::B;

@@ -15,10 +15,4 @@ register_toolchains(
 
 bazel_dep(name = "capnp-cpp", version = "1.1.0")
 bazel_dep(name = "boost.asio", version = "1.87.0.bcr.1")
-
-bazel_dep(name = "capnproto_shm_transport", version = "0.0.1")
-git_override(
-    module_name = "capnproto_shm_transport",
-    remote = "https://github.com/buzzcola3/capnproto_shm_transport.git",
-    commit = "7fd5f5c6c3cdbc95dc16426374c00393f3466036",
-)
+bazel_dep(name = "boost.interprocess", version = "1.87.0")

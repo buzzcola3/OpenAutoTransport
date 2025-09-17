@@ -24,7 +24,7 @@
 #include <memory>
 #include <vector>
 #include <chrono>
-#include "capnproto_shm_transport.hpp"
+#include "shared_memory/duplex_shm_transport.hpp"
 #include "wire.hpp"
 #include <kj/array.h>
 #include <capnp/serialize.h>
@@ -71,7 +71,7 @@ private:
 
   std::size_t maxQueue_{};
   std::unique_ptr<uint8_t[]> slotBuf_;
-  std::unique_ptr<capnproto_shm_transport::ShmFixedSlotDuplexTransport> shm_;
+  std::unique_ptr<duplex_shm_transport::ShmFixedSlotDuplexTransport> shm_;
 
   std::atomic<bool> running_{false};
   std::atomic<uint64_t> sendCount_{0};

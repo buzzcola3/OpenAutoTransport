@@ -18,7 +18,6 @@ In this directory:
 External deps expected by the BUILD file:
 - `@capnp-cpp` (Cap'n Proto and KJ)
 - `@boost.asio` (standalone Asio)
-- `@capnproto_shm_transport` (shared-memory duplex transport)
 
 ## Build
 
