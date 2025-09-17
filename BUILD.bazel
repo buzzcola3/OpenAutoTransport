@@ -5,24 +5,23 @@ genrule(
         "wire.capnp.h",
         "wire.capnp.c++",
     ],
-    tools = [
-        "@capnp-cpp//src/capnp:capnp_tool",
-        "@capnp-cpp//src/capnp:capnpc-c++",
-    ],
-    cmd = """
-      set -euo pipefail
-      SRC="$(location :wire.capnp)"
-      SRCDIR="$$(dirname "$$SRC")"
-      OUTDIR="$(@D)"
-      mkdir -p "$$OUTDIR"
-      cd "$$SRCDIR"
-      "$(location @capnp-cpp//src/capnp:capnp_tool)" compile \
-        -I . \
-        -o"$(location @capnp-cpp//src/capnp:capnpc-c++)":"$$OUTDIR" \
-        wire.capnp
-      test -f "$$OUTDIR/wire.capnp.h"
-      test -f "$$OUTDIR/wire.capnp.c++"
-    """,
+        tools = [
+                "@capnp-cpp//src/capnp:capnp_tool",
+                "@capnp-cpp//src/capnp:capnpc-c++",
+        ],
+        cmd = """
+            set -euo pipefail
+            SRC="$(location :wire.capnp)"
+            SRCDIR="$$(dirname "$$SRC")"
+            OUTDIR="$(@D)"
+            CAPNP_BIN="$(execpath @capnp-cpp//src/capnp:capnp_tool)"
+            CAPNPC_PLUGIN="$(execpath @capnp-cpp//src/capnp:capnpc-c++)"
+            mkdir -p "$$OUTDIR"
+            "$$CAPNP_BIN" compile \
+                -I "$$SRCDIR" \
+                -o"$$CAPNPC_PLUGIN":"$$OUTDIR" \
+                "$$SRC"
+        """,
     visibility = ["//visibility:public"],
 )
 
