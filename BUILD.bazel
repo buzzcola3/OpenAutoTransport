@@ -41,7 +41,8 @@ cc_library(
     name = "open_auto_transport",
     srcs = ["transport.cpp"],
     hdrs = ["transport.hpp", "wire.hpp"],
-    copts = ["-fPIC", "-Ishared_memory"],
+    copts = ["-fPIC"],
+    includes = ["shared_memory"],
     deps = [
         ":wire_capnp",
         "//shared_memory:duplex_shm_transport",
@@ -55,7 +56,6 @@ cc_library(
 cc_binary(
     name = "open_auto_transport_demo",
     srcs = ["transport_demo.cpp"],
-    copts = ["-Ishared_memory"],
     deps = [
         ":open_auto_transport",
         ":wire_capnp",
