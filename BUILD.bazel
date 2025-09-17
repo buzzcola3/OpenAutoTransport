@@ -31,6 +31,7 @@ cc_library(
     hdrs = ["wire.capnp.h"],
     copts = ["-xc++"],
     deps = [
+        ":wire_capnp_gen",
         "@capnp-cpp//src/capnp:capnp",
         "@capnp-cpp//src/kj:kj",
     ],
