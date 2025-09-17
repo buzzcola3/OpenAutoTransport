@@ -11,7 +11,7 @@ genrule(
     ],
     cmd = """
       $(location @capnp-cpp//src/capnp:capnp_tool) compile \
-        --src-prefix=src/autoapp/Transport \
+        --src-prefix=. \
         -o$(location @capnp-cpp//src/capnp:capnpc-c++):$(@D) \
         $(location wire.capnp)
     """,
@@ -22,7 +22,6 @@ cc_library(
     name = "wire_capnp",
     srcs = ["wire.capnp.c++"],
     hdrs = ["wire.capnp.h"],
-    includes = ["."],
     copts = ["-xc++"],
     deps = [
         "@capnp-cpp//src/capnp:capnp",
@@ -35,7 +34,6 @@ cc_library(
     name = "open_auto_transport",
     srcs = ["transport.cpp"],
     hdrs = ["transport.hpp", "wire.hpp"],
-    include_prefix = "buzz/autoapp/Transport",
     copts = ["-fPIC"],
     deps = [
         ":wire_capnp",
@@ -48,10 +46,10 @@ cc_library(
 )
 
 cc_binary(
-    name = "transport_demo",
+    name = "open_auto_transport_demo",
     srcs = ["transport_demo.cpp"],
     deps = [
-        ":transport",
+        ":open_auto_transport",
         ":wire_capnp",
         "@capnp-cpp//src/capnp:capnp",
         "@capnp-cpp//src/kj:kj",
