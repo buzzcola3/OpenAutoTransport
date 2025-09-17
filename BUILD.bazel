@@ -15,10 +15,13 @@ genrule(
       SRCDIR="$$(dirname "$$SRC")"
       OUTDIR="$(@D)"
       mkdir -p "$$OUTDIR"
+      cd "$$SRCDIR"
       "$(location @capnp-cpp//src/capnp:capnp_tool)" compile \
-        -I "$$SRCDIR" \
+        -I . \
         -o"$(location @capnp-cpp//src/capnp:capnpc-c++)":"$$OUTDIR" \
-        "$$SRC"
+        wire.capnp
+      test -f "$$OUTDIR/wire.capnp.h"
+      test -f "$$OUTDIR/wire.capnp.c++"
     """,
     visibility = ["//visibility:public"],
 )
