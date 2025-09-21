@@ -5,30 +5,31 @@ genrule(
         "wire.capnp.h",
         "wire.capnp.c++",
     ],
-    cmd = """
-            set -euo pipefail
-            SRC="$(location :wire.capnp)"
-            SRCDIR="$$(dirname "$$SRC")"
-            OUTDIR="$(@D)"
-            TMPDIR="$$OUTDIR/.capnp_tmp"
-            CAPNP_BIN="$(execpath @capnp-cpp//src/capnp:capnp_tool)"
-            CAPNPC_PLUGIN="$(execpath @capnp-cpp//src/capnp:capnpc-c++)"
-            rm -rf "$$TMPDIR"
-            mkdir -p "$$TMPDIR" "$$OUTDIR"
-            "$$CAPNP_BIN" compile \
-                -I "$$SRCDIR" \
-                -o"$$CAPNPC_PLUGIN":"$$TMPDIR" \
-                "$$SRC"
-            # Copy to the exact declared output file paths (files, not directories)
-            cp "$$TMPDIR"/wire.capnp.h "$$OUTDIR"/wire.capnp.h
-            cp "$$TMPDIR"/wire.capnp.c++ "$$OUTDIR"/wire.capnp.c++
-            # Cleanup temporary directory
-            rm -rf "$$TMPDIR"
-        """,
     tools = [
         "@capnp-cpp//src/capnp:capnp_tool",
         "@capnp-cpp//src/capnp:capnpc-c++",
     ],
+    cmd = """
+      set -euo pipefail
+      SRC="$(location :wire.capnp)"
+      SRCDIR="$$(dirname "$$SRC")"
+      OUTDIR="$(@D)"
+      CAPNP_BIN="$(execpath @capnp-cpp//src/capnp:capnp_tool)"
+      CAPNPC_PLUGIN="$(execpath @capnp-cpp//src/capnp:capnpc-c++)"
+
+      mkdir -p "$$OUTDIR"
+      cd "$$SRCDIR"
+
+      # Compile with include root '.' so outputs are named wire.capnp.{h,c++} in OUTDIR.
+      "$$CAPNP_BIN" compile \
+        -I . \
+        -o"$$CAPNPC_PLUGIN":"$$OUTDIR" \
+        wire.capnp
+
+      # Verify declared outputs exist
+      test -f "$$OUTDIR/wire.capnp.h"
+      test -f "$$OUTDIR/wire.capnp.c++"
+    """,
     visibility = ["//visibility:public"],
 )
 
