@@ -5,11 +5,7 @@ genrule(
         "wire.capnp.h",
         "wire.capnp.c++",
     ],
-        tools = [
-                "@capnp-cpp//src/capnp:capnp_tool",
-                "@capnp-cpp//src/capnp:capnpc-c++",
-        ],
-        cmd = """
+    cmd = """
             set -euo pipefail
             SRC="$(location :wire.capnp)"
             SRCDIR="$$(dirname "$$SRC")"
@@ -22,6 +18,10 @@ genrule(
                 -o"$$CAPNPC_PLUGIN":"$$OUTDIR" \
                 "$$SRC"
         """,
+    tools = [
+        "@capnp-cpp//src/capnp:capnp_tool",
+        "@capnp-cpp//src/capnp:capnpc-c++",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -30,27 +30,34 @@ cc_library(
     srcs = ["wire.capnp.c++"],
     hdrs = ["wire.capnp.h"],
     copts = ["-xc++"],
+    visibility = ["//visibility:public"],
     deps = [
         ":wire_capnp_gen",
         "@capnp-cpp//src/capnp:capnp",
         "@capnp-cpp//src/kj:kj",
     ],
-    visibility = ["//visibility:public"],
 )
 
 cc_library(
     name = "open_auto_transport",
     srcs = ["transport.cpp"],
-    hdrs = ["transport.hpp", "wire.hpp"],
-    copts = ["-fPIC", "-Ishared_memory"],
+    hdrs = [
+        "transport.hpp",
+        "wire.hpp",
+    ],
+    copts = [
+        "-fPIC",
+        "-Ishared_memory",
+    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":wire_capnp",
+        ":wire_capnp_gen",
         "//shared_memory:duplex_shm_transport",
         "@boost.asio",
         "@capnp-cpp//src/capnp:capnp",
         "@capnp-cpp//src/kj:kj",
     ],
-    visibility = ["//visibility:public"],
 )
 
 cc_binary(
@@ -61,8 +68,8 @@ cc_binary(
         ":open_auto_transport",
         ":wire_capnp",
         "//shared_memory:duplex_shm_transport",
+        "@boost.asio",
         "@capnp-cpp//src/capnp:capnp",
         "@capnp-cpp//src/kj:kj",
-        "@boost.asio",
     ],
 )

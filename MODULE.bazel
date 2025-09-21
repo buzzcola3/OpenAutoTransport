@@ -10,7 +10,7 @@ use_repo(toolchains, "zig_sdk")
 
 register_toolchains(
     "@zig_sdk//toolchain:linux_amd64_gnu.2.31",  # glibc
-    "@zig_sdk//toolchain:linux_amd64_musl",      # musl
+    "@zig_sdk//toolchain:linux_amd64_musl",  # musl
 )
 
 bazel_dep(name = "capnp-cpp", version = "1.1.0")
