@@ -36,42 +36,28 @@ jobs:
           bazel --version
           bazel info release || true
 
-      - name: Build targets (all variants)
+      - name: Build and collect (per variant)
+        id: build_collect
         shell: bash
         run: |
           set -euo pipefail
           # Build headers once (not arch/libc specific)
           bazel build //:wire_capnp_gen
 
-          # Build library for all requested variants
-          CONFIGS=(amd64_gnu amd64_musl arm64_gnu arm64_musl)
-          for cfg in "${CONFIGS[@]}"; do
-            echo "Building //:open_auto_transport with --config=$cfg"
-            bazel build --config="$cfg" //:open_auto_transport
-            echo "Building //:open_auto_transport_demo with --config=$cfg"
-            bazel build --config="$cfg" //:open_auto_transport_demo
-          done
-
-      - name: Collect release files
-        id: collect
-        shell: bash
-        run: |
-          set -euo pipefail
           BAZEL_BIN=$(bazel info bazel-bin)
           mkdir -p dist
-
-          # Copy generated Cap'n Proto files (declared outs)
+          # Copy generated Cap'n Proto files (declared outs) and public header
           cp -v "$BAZEL_BIN/wire.capnp.h" dist/
           cp -v "$BAZEL_BIN/wire.capnp.c++" dist/
-
-          # Copy public header from workspace
           cp -v wire.hpp dist/
 
-          # Collect libraries from all variants and suffix filenames
           CONFIGS=(amd64_gnu amd64_musl arm64_gnu arm64_musl)
           for cfg in "${CONFIGS[@]}"; do
-            echo "Collecting libraries for config=$cfg"
-            # Query the files for the target under this config
+            echo "== Config: $cfg =="
+            echo "Building //:open_auto_transport"
+            bazel build --config="$cfg" //:open_auto_transport
+
+            echo "Collecting library artifacts"
             mapfile -t LIB_PATHS < <(bazel cquery --config="$cfg" //:open_auto_transport --output=starlark --starlark:expr='"\n".join([f.path for f in target.files.to_list()])')
             if [[ ${#LIB_PATHS[@]} -eq 0 ]]; then
               echo "::error::No artifacts for //:open_auto_transport under --config=$cfg"
@@ -87,33 +73,29 @@ jobs:
                   ext=""
                   name="$base"
                 fi
-                # Preserve both .a and .so with a suffix
                 cp -v "$p" "dist/${name}-${cfg}${ext}"
               fi
             done
 
-            echo "Collecting demo for config=$cfg"
+            echo "Building //:open_auto_transport_demo"
+            bazel build --config="$cfg" //:open_auto_transport_demo
+            echo "Collecting demo binary"
             mapfile -t DEMO_PATHS < <(bazel cquery --config="$cfg" //:open_auto_transport_demo --output=starlark --starlark:expr='"\n".join([f.path for f in target.files.to_list()])')
             if [[ ${#DEMO_PATHS[@]} -eq 0 ]]; then
               echo "::error::No artifacts for //:open_auto_transport_demo under --config=$cfg"
               exit 1
             fi
-            # Heuristic: prefer a file whose basename equals the target name
             target_name="open_auto_transport_demo"
             picked=""
             for p in "${DEMO_PATHS[@]}"; do
-              if [[ -f "$p" && "$(basename "$p")" == "$target_name" ]]; then
-                picked="$p"; break
-              fi
+              if [[ -f "$p" && "$(basename "$p")" == "$target_name" ]]; then picked="$p"; break; fi
             done
             if [[ -z "$picked" ]]; then
-              # Fall back to first executable regular file
               for p in "${DEMO_PATHS[@]}"; do
                 if [[ -f "$p" && -x "$p" ]]; then picked="$p"; break; fi
               done
             fi
             if [[ -z "$picked" ]]; then
-              # As a last resort, copy all regular files with the suffix
               for p in "${DEMO_PATHS[@]}"; do
                 if [[ -f "$p" ]]; then cp -v "$p" "dist/${target_name}-${cfg}-misc-$(basename "$p")"; fi
               done
