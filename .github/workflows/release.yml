@@ -1,0 +1,77 @@
+name: Release assets
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build and upload release assets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bazelisk
+        uses: bazelbuild/setup-bazelisk@v2
+
+      - name: Bazel info
+        run: |
+          bazel --version
+          bazel info release || true
+
+      - name: Build targets
+        run: |
+          bazel build //:open_auto_transport //:wire_capnp_gen
+
+      - name: Collect release files
+        id: collect
+        shell: bash
+        run: |
+          set -euo pipefail
+          BAZEL_BIN=$(bazel info bazel-bin)
+          mkdir -p dist
+
+          # Copy generated Cap'n Proto files (declared outs)
+          cp -v "$BAZEL_BIN/wire.capnp.h" dist/
+          cp -v "$BAZEL_BIN/wire.capnp.c++" dist/
+
+          # Copy public header from workspace
+          cp -v wire.hpp dist/
+
+          # Resolve the library file produced by //:open_auto_transport via cquery for robustness
+          LIB_PATHS=$(bazel cquery //:open_auto_transport --output=starlark --starlark:expr='"\n".join([f.path for f in target.files.to_list()])')
+          echo "Resolved library artifact(s):\n$LIB_PATHS"
+          # Choose the first file if multiple, else ensure at least one found
+          LIB_FILE=$(echo "$LIB_PATHS" | head -n1)
+          if [[ -z "$LIB_FILE" || ! -f "$LIB_FILE" ]]; then
+            echo "::error::Could not resolve library artifact for //:open_auto_transport"
+            exit 1
+          fi
+          cp -v "$LIB_FILE" dist/
+
+          echo "dist contents:" && (ls -l dist || true)
+
+      - name: Upload workflow artifact (for debugging)
+        uses: actions/upload-artifact@v4
+        with:
+          name: open-auto-transport-${{ github.ref_name }}
+          path: dist/*
+
+      - name: Publish GitHub Release assets
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
