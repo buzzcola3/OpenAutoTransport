@@ -2,6 +2,14 @@
 
 A small transport layer using Cap'n Proto to frame messages and a shared-memory duplex transport for fast interprocess communication.
 
+> Platform support: Linux only
+
+This project currently targets Linux only and ships prebuilt artifacts for the following Linux variants:
+- x86_64 (amd64) with glibc: `--config=amd64_gnu`
+- x86_64 (amd64) with musl: `--config=amd64_musl`
+- aarch64 (arm64) with glibc: `--config=arm64_gnu`
+- aarch64 (arm64) with musl: `--config=arm64_musl`
+
 This package contains:
 - `wire.capnp` — schema defining `MsgType` and `Envelope`
 - `open_auto_transport` — C++ library implementing the transport
@@ -26,6 +34,22 @@ From this folder:
 ```bash
 bazel build //:open_auto_transport
 bazel build //:transport_demo
+```
+
+To cross-build for specific Linux variants, pass one of the provided configs:
+
+```bash
+# glibc x86_64
+bazel build --config=amd64_gnu //:open_auto_transport //:open_auto_transport_demo
+
+# musl x86_64
+bazel build --config=amd64_musl //:open_auto_transport //:open_auto_transport_demo
+
+# glibc arm64
+bazel build --config=arm64_gnu //:open_auto_transport //:open_auto_transport_demo
+
+# musl arm64
+bazel build --config=arm64_musl //:open_auto_transport //:open_auto_transport_demo
 ```
 
 From the repo root (equivalent):

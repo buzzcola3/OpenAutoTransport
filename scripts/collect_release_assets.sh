@@ -12,6 +12,8 @@ echo "Building library variants: ${CONFIGS[*]}"
 for cfg in "${CONFIGS[@]}"; do
   echo "-- Building //:open_auto_transport with --config=$cfg"
   bazel build --config="$cfg" //:open_auto_transport
+  echo "-- Building //:open_auto_transport_demo with --config=$cfg"
+  bazel build --config="$cfg" //:open_auto_transport_demo
 done
 
 BAZEL_BIN=$(bazel info bazel-bin)
@@ -39,6 +41,27 @@ for cfg in "${CONFIGS[@]}"; do
       cp -v "$p" "$OUTDIR/${name}-${cfg}.${ext}"
     fi
   done
+
+  # Demo binary
+  mapfile -t DEMO_PATHS < <(bazel cquery --config="$cfg" //:open_auto_transport_demo --output=starlark --starlark:expr='"\n".join([f.path for f in target.files.to_list()])')
+  target_name="open_auto_transport_demo"
+  picked=""
+  for p in "${DEMO_PATHS[@]}"; do
+    if [[ -f "$p" && "$(basename "$p")" == "$target_name" ]]; then picked="$p"; break; fi
+  done
+  if [[ -z "$picked" ]]; then
+    for p in "${DEMO_PATHS[@]}"; do
+      if [[ -f "$p" && -x "$p" ]]; then picked="$p"; break; fi
+    done
+  fi
+  if [[ -n "$picked" ]]; then
+    cp -v "$picked" "$OUTDIR/${target_name}-${cfg}"
+  else
+    echo "WARN: Could not identify demo binary for $cfg; dumping all files"
+    for p in "${DEMO_PATHS[@]}"; do
+      if [[ -f "$p" ]]; then cp -v "$p" "$OUTDIR/${target_name}-${cfg}-misc-$(basename "$p")"; fi
+    done
+  fi
 done
 
 echo "\nDone. Contents of $OUTDIR:" 

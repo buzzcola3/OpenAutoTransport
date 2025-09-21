@@ -48,6 +48,8 @@ jobs:
           for cfg in "${CONFIGS[@]}"; do
             echo "Building //:open_auto_transport with --config=$cfg"
             bazel build --config="$cfg" //:open_auto_transport
+            echo "Building //:open_auto_transport_demo with --config=$cfg"
+            bazel build --config="$cfg" //:open_auto_transport_demo
           done
 
       - name: Collect release files
@@ -78,12 +80,46 @@ jobs:
             for p in "${LIB_PATHS[@]}"; do
               if [[ -f "$p" ]]; then
                 base=$(basename "$p")
-                ext="${base##*.}"
-                name="${base%.*}"
+                if [[ "$base" == *.* ]]; then
+                  ext=".${base##*.}"
+                  name="${base%.*}"
+                else
+                  ext=""
+                  name="$base"
+                fi
                 # Preserve both .a and .so with a suffix
-                cp -v "$p" "dist/${name}-${cfg}.${ext}"
+                cp -v "$p" "dist/${name}-${cfg}${ext}"
               fi
             done
+
+            echo "Collecting demo for config=$cfg"
+            mapfile -t DEMO_PATHS < <(bazel cquery --config="$cfg" //:open_auto_transport_demo --output=starlark --starlark:expr='"\n".join([f.path for f in target.files.to_list()])')
+            if [[ ${#DEMO_PATHS[@]} -eq 0 ]]; then
+              echo "::error::No artifacts for //:open_auto_transport_demo under --config=$cfg"
+              exit 1
+            fi
+            # Heuristic: prefer a file whose basename equals the target name
+            target_name="open_auto_transport_demo"
+            picked=""
+            for p in "${DEMO_PATHS[@]}"; do
+              if [[ -f "$p" && "$(basename "$p")" == "$target_name" ]]; then
+                picked="$p"; break
+              fi
+            done
+            if [[ -z "$picked" ]]; then
+              # Fall back to first executable regular file
+              for p in "${DEMO_PATHS[@]}"; do
+                if [[ -f "$p" && -x "$p" ]]; then picked="$p"; break; fi
+              done
+            fi
+            if [[ -z "$picked" ]]; then
+              # As a last resort, copy all regular files with the suffix
+              for p in "${DEMO_PATHS[@]}"; do
+                if [[ -f "$p" ]]; then cp -v "$p" "dist/${target_name}-${cfg}-misc-$(basename "$p")"; fi
+              done
+            else
+              cp -v "$picked" "dist/${target_name}-${cfg}"
+            fi
           done
 
           echo "dist contents:" && (ls -l dist || true)
@@ -101,5 +137,18 @@ jobs:
           files: |
             dist/*
           fail_on_unmatched_files: true
+          body: |
+            OpenAutoTransport release for Linux only.
+
+            Supported Linux variants (prebuilt):
+            - x86_64 (amd64) with glibc: amd64_gnu
+            - x86_64 (amd64) with musl: amd64_musl
+            - aarch64 (arm64) with glibc: arm64_gnu
+            - aarch64 (arm64) with musl: arm64_musl
+
+            Artifacts include:
+            - libopen_auto_transport-{variant}.a and .so
+            - open_auto_transport_demo-{variant}
+            - Headers: wire.capnp.h, wire.capnp.c++, wire.hpp
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
