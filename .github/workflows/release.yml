@@ -20,10 +20,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Cache Bazel output
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/bazel
+          key: ${{ runner.os }}-bazel-${{ hashFiles('**/WORKSPACE') }}
+          restore-keys: |
+            ${{ runner.os }}-bazel-
+            
       - name: Set up Bazelisk
         uses: bazelbuild/setup-bazelisk@v2
-        env:
-          BAZELISK_CACHE_ENABLED: "false"
 
       - name: Bazel info
         run: |
