@@ -65,6 +65,7 @@ cc_library(
         "-fPIC",
     ],
     includes = ["shared_memory"],
+    include_prefix = "open_auto_transport",
     visibility = ["//visibility:public"],
     deps = [
         ":wire_capnp",
