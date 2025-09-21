@@ -36,9 +36,19 @@ jobs:
           bazel --version
           bazel info release || true
 
-      - name: Build targets
+      - name: Build targets (all variants)
+        shell: bash
         run: |
-          bazel build //:open_auto_transport //:wire_capnp_gen
+          set -euo pipefail
+          # Build headers once (not arch/libc specific)
+          bazel build //:wire_capnp_gen
+
+          # Build library for all requested variants
+          CONFIGS=(amd64_gnu amd64_musl arm64_gnu arm64_musl)
+          for cfg in "${CONFIGS[@]}"; do
+            echo "Building //:open_auto_transport with --config=$cfg"
+            bazel build --config="$cfg" //:open_auto_transport
+          done
 
       - name: Collect release files
         id: collect
@@ -55,18 +65,25 @@ jobs:
           # Copy public header from workspace
           cp -v wire.hpp dist/
 
-          # Resolve the library files produced by //:open_auto_transport via cquery for robustness
-          mapfile -t LIB_PATHS < <(bazel cquery //:open_auto_transport --output=starlark --starlark:expr='"\n".join([f.path for f in target.files.to_list()])')
-          echo "Resolved library artifact(s):"
-          printf '%s\n' "${LIB_PATHS[@]}"
-          if [[ ${#LIB_PATHS[@]} -eq 0 ]]; then
-            echo "::error::Could not resolve any library artifact for //:open_auto_transport"
-            exit 1
-          fi
-          for p in "${LIB_PATHS[@]}"; do
-            if [[ -f "$p" ]]; then
-              cp -v "$p" dist/
+          # Collect libraries from all variants and suffix filenames
+          CONFIGS=(amd64_gnu amd64_musl arm64_gnu arm64_musl)
+          for cfg in "${CONFIGS[@]}"; do
+            echo "Collecting libraries for config=$cfg"
+            # Query the files for the target under this config
+            mapfile -t LIB_PATHS < <(bazel cquery --config="$cfg" //:open_auto_transport --output=starlark --starlark:expr='"\n".join([f.path for f in target.files.to_list()])')
+            if [[ ${#LIB_PATHS[@]} -eq 0 ]]; then
+              echo "::error::No artifacts for //:open_auto_transport under --config=$cfg"
+              exit 1
             fi
+            for p in "${LIB_PATHS[@]}"; do
+              if [[ -f "$p" ]]; then
+                base=$(basename "$p")
+                ext="${base##*.}"
+                name="${base%.*}"
+                # Preserve both .a and .so with a suffix
+                cp -v "$p" "dist/${name}-${cfg}.${ext}"
+              fi
+            done
           done
 
           echo "dist contents:" && (ls -l dist || true)
