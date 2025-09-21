@@ -5,26 +5,41 @@ genrule(
         "wire.capnp.h",
         "wire.capnp.c++",
     ],
-        tools = [
-                "@capnp-cpp//src/capnp:capnp_tool",
-                "@capnp-cpp//src/capnp:capnpc-c++",
-        ],
-        cmd = """
-            set -euo pipefail
-            SRC="$(location :wire.capnp)"
-            SRCDIR="$$(dirname "$$SRC")"
-            OUTDIR="$(@D)"
-            CAPNP_BIN="$(execpath @capnp-cpp//src/capnp:capnp_tool)"
-            CAPNPC_PLUGIN="$(execpath @capnp-cpp//src/capnp:capnpc-c++)"
-            mkdir -p "$$OUTDIR"
-            "$$CAPNP_BIN" compile \
-                -I "$$SRCDIR" \
-                -o"$$CAPNPC_PLUGIN":"$$OUTDIR" \
-                "$$SRC"
-        """,
+    tools = [
+        "@capnp-cpp//src/capnp:capnp_tool",
+        "@capnp-cpp//src/capnp:capnpc-c++",
+    ],
+    cmd = """
+      set -euo pipefail
+      SRC="$(location :wire.capnp)"
+      SRCDIR="$$(dirname "$$SRC")"
+      OUTDIR="$(@D)"
+      CAPNP_BIN="$(execpath @capnp-cpp//src/capnp:capnp_tool)"
+      CAPNPC_PLUGIN="$(execpath @capnp-cpp//src/capnp:capnpc-c++)"
+
+      mkdir -p "$$OUTDIR"
+      "$$CAPNP_BIN" compile \
+        --src-prefix="$$SRCDIR" \
+        -o"$$CAPNPC_PLUGIN":"$$OUTDIR" \
+        "$$SRC"
+
+      test -f "$$OUTDIR/wire.capnp.h"
+      test -f "$$OUTDIR/wire.capnp.c++"
+    """,
     visibility = ["//visibility:public"],
 )
 
+# Public access to the generated files themselves (if a consumer needs raw files)
+filegroup(
+    name = "wire_capnp_generated",
+    srcs = [
+        "wire.capnp.h",
+        "wire.capnp.c++",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Library wrapping the generated Cap'n Proto sources
 cc_library(
     name = "wire_capnp",
     srcs = ["wire.capnp.c++"],
@@ -39,10 +54,18 @@ cc_library(
 
 cc_library(
     name = "open_auto_transport",
-    srcs = ["transport.cpp"],
-    hdrs = ["transport.hpp", "wire.hpp"],
-    copts = ["-fPIC"],
+    srcs = [
+        "transport.cpp",
+    ],
+    hdrs = [
+        "transport.hpp",
+        "wire.hpp",
+    ],
+    copts = [
+        "-fPIC",
+    ],
     includes = ["shared_memory"],
+    visibility = ["//visibility:public"],
     deps = [
         ":wire_capnp",
         "//shared_memory:duplex_shm_transport",
@@ -50,7 +73,6 @@ cc_library(
         "@capnp-cpp//src/capnp:capnp",
         "@capnp-cpp//src/kj:kj",
     ],
-    visibility = ["//visibility:public"],
 )
 
 cc_binary(
@@ -58,10 +80,5 @@ cc_binary(
     srcs = ["transport_demo.cpp"],
     deps = [
         ":open_auto_transport",
-        ":wire_capnp",
-        "//shared_memory:duplex_shm_transport",
-        "@capnp-cpp//src/capnp:capnp",
-        "@capnp-cpp//src/kj:kj",
-        "@boost.asio",
     ],
 )

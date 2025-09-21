@@ -6,10 +6,10 @@ cc_library(
     hdrs = [
         "duplex_shm_transport.hpp",
     ],
-    include_prefix = "shared_memory",
-    visibility = ["//visibility:public"],
     copts = ["-std=c++17"],
+    include_prefix = "shared_memory",
     linkopts = ["-pthread"],
+    visibility = ["//visibility:public"],
     deps = [
         "@boost.asio",
         "@boost.interprocess",
@@ -19,6 +19,9 @@ cc_library(
 cc_binary(
     name = "duplex_shm_transport_demo",
     srcs = ["duplex_shm_transport_demo.cpp"],
+    linkopts = [
+        "-pthread",
+        "-lrt",
+    ],
     deps = [":duplex_shm_transport"],
-    linkopts = ["-pthread", "-lrt"],
 )
