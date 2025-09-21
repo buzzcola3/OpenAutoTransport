@@ -27,9 +27,9 @@ jobs:
           key: ${{ runner.os }}-bazel-${{ hashFiles('**/WORKSPACE') }}
           restore-keys: |
             ${{ runner.os }}-bazel-
-            
+
       - name: Set up Bazelisk
-        uses: bazelbuild/setup-bazelisk@v2
+        uses: bazelbuild/setup-bazelisk@v3
 
       - name: Bazel info
         run: |
