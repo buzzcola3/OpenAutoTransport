@@ -47,16 +47,19 @@ jobs:
           # Copy public header from workspace
           cp -v wire.hpp dist/
 
-          # Resolve the library file produced by //:open_auto_transport via cquery for robustness
-          LIB_PATHS=$(bazel cquery //:open_auto_transport --output=starlark --starlark:expr='"\n".join([f.path for f in target.files.to_list()])')
-          echo "Resolved library artifact(s):\n$LIB_PATHS"
-          # Choose the first file if multiple, else ensure at least one found
-          LIB_FILE=$(echo "$LIB_PATHS" | head -n1)
-          if [[ -z "$LIB_FILE" || ! -f "$LIB_FILE" ]]; then
-            echo "::error::Could not resolve library artifact for //:open_auto_transport"
+          # Resolve the library files produced by //:open_auto_transport via cquery for robustness
+          mapfile -t LIB_PATHS < <(bazel cquery //:open_auto_transport --output=starlark --starlark:expr='"\n".join([f.path for f in target.files.to_list()])')
+          echo "Resolved library artifact(s):"
+          printf '%s\n' "${LIB_PATHS[@]}"
+          if [[ ${#LIB_PATHS[@]} -eq 0 ]]; then
+            echo "::error::Could not resolve any library artifact for //:open_auto_transport"
             exit 1
           fi
-          cp -v "$LIB_FILE" dist/
+          for p in "${LIB_PATHS[@]}"; do
+            if [[ -f "$p" ]]; then
+              cp -v "$p" dist/
+            fi
+          done
 
           echo "dist contents:" && (ls -l dist || true)
 
