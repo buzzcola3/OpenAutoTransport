@@ -18,15 +18,11 @@ genrule(
       CAPNPC_PLUGIN="$(execpath @capnp-cpp//src/capnp:capnpc-c++)"
 
       mkdir -p "$$OUTDIR"
-      cd "$$SRCDIR"
-
-      # Compile with include root '.' so outputs are named wire.capnp.{h,c++} in OUTDIR.
       "$$CAPNP_BIN" compile \
-        -I . \
+        --src-prefix="$$SRCDIR" \
         -o"$$CAPNPC_PLUGIN":"$$OUTDIR" \
-        wire.capnp
+        "$$SRC"
 
-      # Verify declared outputs exist
       test -f "$$OUTDIR/wire.capnp.h"
       test -f "$$OUTDIR/wire.capnp.c++"
     """,
