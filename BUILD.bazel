@@ -25,34 +25,45 @@ genrule(
     visibility = ["//visibility:public"],
 )
 
+# Public access to the generated files themselves (if a consumer needs raw files)
+filegroup(
+    name = "wire_capnp_generated",
+    srcs = [
+        "wire.capnp.h",
+        "wire.capnp.c++",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Library wrapping the generated Cap'n Proto sources
 cc_library(
     name = "wire_capnp",
     srcs = ["wire.capnp.c++"],
     hdrs = ["wire.capnp.h"],
     copts = ["-xc++"],
-    visibility = ["//visibility:public"],
     deps = [
-        ":wire_capnp_gen",
         "@capnp-cpp//src/capnp:capnp",
         "@capnp-cpp//src/kj:kj",
     ],
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
     name = "open_auto_transport",
-    srcs = ["transport.cpp"],
+    srcs = [
+        "transport.cpp",
+    ],
     hdrs = [
         "transport.hpp",
         "wire.hpp",
     ],
     copts = [
         "-fPIC",
-        "-Ishared_memory",
     ],
+    includes = ["shared_memory"],
     visibility = ["//visibility:public"],
     deps = [
         ":wire_capnp",
-        ":wire_capnp_gen",
         "//shared_memory:duplex_shm_transport",
         "@boost.asio",
         "@capnp-cpp//src/capnp:capnp",
@@ -63,13 +74,7 @@ cc_library(
 cc_binary(
     name = "open_auto_transport_demo",
     srcs = ["transport_demo.cpp"],
-    copts = ["-Ishared_memory"],
     deps = [
         ":open_auto_transport",
-        ":wire_capnp",
-        "//shared_memory:duplex_shm_transport",
-        "@boost.asio",
-        "@capnp-cpp//src/capnp:capnp",
-        "@capnp-cpp//src/kj:kj",
     ],
 )
