@@ -66,8 +66,8 @@ private:
   void handleIncomingSlot(const uint8_t* data, uint64_t len);
 
   static constexpr const char* kName = "openauto_core";
-  static constexpr std::size_t kSlotSize  = 4096;
-  static constexpr std::size_t kSlotCount = 1024;
+  static constexpr std::size_t kSlotSize  = 12*1024; // 12KB slots
+  static constexpr std::size_t kSlotCount = 512;
 
   std::unique_ptr<uint8_t[]> slotBuf_;
   std::unique_ptr<duplex_shm_transport::ShmFixedSlotDuplexTransport> shm_;
