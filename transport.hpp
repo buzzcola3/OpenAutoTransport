@@ -24,12 +24,12 @@
 #include <memory>
 #include <vector>
 #include <chrono>
-#include "shared_memory/duplex_shm_transport.hpp"
 #include "wire.hpp"
-#include <kj/array.h>
-#include <capnp/serialize.h>
 #include <unordered_map>
 #include <mutex>
+
+// Forward declaration to avoid exposing the full shared memory header in the public API
+namespace duplex_shm_transport { class ShmFixedSlotDuplexTransport; }
 
 namespace buzz::autoapp::Transport {
 

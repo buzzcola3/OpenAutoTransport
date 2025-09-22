@@ -17,12 +17,9 @@
 */
 
 #include "transport.hpp"
-#include "wire.capnp.h"
-#include "wire.hpp"
-
-#include <capnp/serialize.h>
-#include <capnp/message.h>
-#include "shared_memory/duplex_shm_transport.hpp"
+#include "shared_memory/duplex_shm_transport.hpp"  // concrete type + static methods
+#include <capnp/message.h>    // MallocMessageBuilder
+#include <capnp/serialize.h>  // FlatArrayMessageReader, messageToFlatArray
 
 #include <cstring>
 #include <iostream>

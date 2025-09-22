@@ -46,10 +46,10 @@ jobs:
 
           BAZEL_BIN=$(bazel info bazel-bin)
           mkdir -p dist
-          # Copy generated Cap'n Proto files (declared outs) and public header
+          # Copy essential headers only
           cp -v "$BAZEL_BIN/wire.capnp.h" dist/
-          cp -v "$BAZEL_BIN/wire.capnp.c++" dist/
           cp -v wire.hpp dist/
+          cp -v transport.hpp dist/
 
           CONFIGS=(amd64_gnu amd64_musl arm64_gnu arm64_musl)
           for cfg in "${CONFIGS[@]}"; do
@@ -131,6 +131,6 @@ jobs:
             Artifacts include:
             - libopen_auto_transport-{variant}.a and .so
             - open_auto_transport_demo-{variant}
-            - Headers: wire.capnp.h, wire.capnp.c++, wire.hpp
+            - Headers: wire.capnp.h, wire.hpp, transport.hpp
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
