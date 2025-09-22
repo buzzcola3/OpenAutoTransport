@@ -28,8 +28,7 @@
 
 namespace buzz::autoapp::Transport {
 
-Transport::Transport(std::size_t maxQueue)
-  : maxQueue_(maxQueue) {
+Transport::Transport() {
   slotBuf_ = std::unique_ptr<uint8_t[]>{ new uint8_t[kSlotSize] };
 }
 

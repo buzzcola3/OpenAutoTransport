@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  Transport t(1024);
+  Transport t;
 
   // Register per-type handler for STATUS messages (timestamp + payload).
   t.addTypeHandler(buzz::wire::MsgType::STATUS,

@@ -39,7 +39,7 @@ public:
 
   enum class Side { Unknown, A, B };
 
-  explicit Transport(std::size_t maxQueue);
+  Transport();
   ~Transport();
 
   void setHandler(Handler handler);
@@ -69,7 +69,6 @@ private:
   static constexpr std::size_t kSlotSize  = 4096;
   static constexpr std::size_t kSlotCount = 1024;
 
-  std::size_t maxQueue_{};
   std::unique_ptr<uint8_t[]> slotBuf_;
   std::unique_ptr<duplex_shm_transport::ShmFixedSlotDuplexTransport> shm_;
 
