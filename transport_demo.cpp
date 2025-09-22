@@ -85,8 +85,8 @@ int main(int argc, char* argv[]) {
 
   Transport t;
 
-  // Register per-type handler for STATUS messages (timestamp + payload).
-  t.addTypeHandler(buzz::wire::MsgType::STATUS,
+  // Register per-type handler for HEARTBEAT messages (timestamp + payload).
+  t.addTypeHandler(buzz::wire::MsgType::HEARTBEAT,
                    [](uint64_t ts, const void* data, std::size_t sz) {
     std::string s(reinterpret_cast<const char*>(data),
                   reinterpret_cast<const char*>(data) + sz);
@@ -95,9 +95,9 @@ int main(int argc, char* argv[]) {
       if (c < 32 || c > 126) { printable = false; break; }
     }
     if (printable)
-      std::cout << "[Demo] STATUS ts=" << ts << " text: " << s << "\n";
+      std::cout << "[Demo] HEARTBEAT ts=" << ts << " text: " << s << "\n";
     else
-      std::cout << "[Demo] STATUS ts=" << ts << " " << sz << " bytes (binary)\n";
+      std::cout << "[Demo] HEARTBEAT ts=" << ts << " " << sz << " bytes (binary)\n";
   });
 
   bool ok = false;
@@ -126,7 +126,7 @@ int main(int argc, char* argv[]) {
     std::string payload =
         std::string("From") + sideStr + "#" + std::to_string(sent);
 
-    t.send(buzz::wire::MsgType::STATUS, nowUsec(), payload.data(), payload.size());
+    t.send(buzz::wire::MsgType::HEARTBEAT, nowUsec(), payload.data(), payload.size());
     ++sent;
     std::this_thread::sleep_for(std::chrono::milliseconds(intervalMs));
   }

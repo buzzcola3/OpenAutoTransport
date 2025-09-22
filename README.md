@@ -136,7 +136,7 @@ uint64_t timestamp = std::chrono::duration_cast<std::chrono::microseconds>(
     std::chrono::steady_clock::now().time_since_epoch()).count();
 
 transport.send(
-    buzz::wire::MsgType::STATUS,     // message type
+    buzz::wire::MsgType::HEARTBEAT,  // message type
     timestamp,                       // timestamp in microseconds
     message.data(),                  // data pointer
     message.size()                   // data size
@@ -170,11 +170,25 @@ transport.setHandler([](uint64_t timestamp, const void* data, std::size_t size) 
 #### Option 2: Type-Specific Handlers (recommended)
 
 ```cpp
-// Handler for STATUS messages
-transport.addTypeHandler(buzz::wire::MsgType::STATUS, 
+// Handler for HEARTBEAT messages
+transport.addTypeHandler(buzz::wire::MsgType::HEARTBEAT, 
     [](uint64_t timestamp, const void* data, std::size_t size) {
-        std::string statusMessage(static_cast<const char*>(data), size);
-        std::cout << "Status: " << statusMessage << std::endl;
+        std::string heartbeatMessage(static_cast<const char*>(data), size);
+        std::cout << "Heartbeat: " << heartbeatMessage << std::endl;
+    });
+
+// Handler for MEDIA AUDIO messages
+transport.addTypeHandler(buzz::wire::MsgType::MEDIA_AUDIO,
+    [](uint64_t timestamp, const void* data, std::size_t size) {
+        std::cout << "Media audio received: " << size << " bytes" << std::endl;
+        // Process audio data...
+    });
+
+// Handler for GUIDANCE AUDIO messages
+transport.addTypeHandler(buzz::wire::MsgType::GUIDANCE_AUDIO,
+    [](uint64_t timestamp, const void* data, std::size_t size) {
+        std::cout << "Guidance audio received: " << size << " bytes" << std::endl;
+        // Process navigation audio...
     });
 
 // Handler for DATA messages
@@ -230,7 +244,7 @@ int main() {
     Transport transport;
     
     // Set up message handler
-    transport.addTypeHandler(buzz::wire::MsgType::STATUS, 
+    transport.addTypeHandler(buzz::wire::MsgType::HEARTBEAT, 
         [](uint64_t ts, const void* data, std::size_t size) {
             std::string msg(static_cast<const char*>(data), size);
             std::cout << "Received: " << msg << std::endl;
@@ -248,7 +262,7 @@ int main() {
         auto now = std::chrono::steady_clock::now().time_since_epoch();
         uint64_t timestamp = std::chrono::duration_cast<std::chrono::microseconds>(now).count();
         
-        transport.send(buzz::wire::MsgType::STATUS, timestamp, message.data(), message.size());
+        transport.send(buzz::wire::MsgType::HEARTBEAT, timestamp, message.data(), message.size());
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
     
@@ -260,9 +274,16 @@ int main() {
 ### Message Types
 
 Available message types defined in `buzz::wire::MsgType`:
-- `STATUS` - General status messages
-- `DATA` - Binary data payloads
-- Add custom types by extending the `wire.capnp` schema
+- `VIDEO` - Video frame data
+- `MEDIA_AUDIO` - Media/music audio streams  
+- `TOUCH` - Touch/input events
+- `CONTROL` - Control/command messages
+- `GUIDANCE_AUDIO` - Navigation/GPS audio guidance
+- `SYSTEM_AUDIO` - System sounds and alerts
+- `DATA` - General binary data payloads
+- `HEARTBEAT` - Keep-alive and status messages
+
+Add custom types by extending the `wire.capnp` schema
 
 ### Error Handling
 

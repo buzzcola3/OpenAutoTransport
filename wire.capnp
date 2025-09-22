@@ -3,11 +3,14 @@
 const protocolVersion :UInt16 = 1;
 
 enum MsgType {
-  video   @0;
-  audio   @1;
-  touch   @2;
-  status  @3;
-  control @4;
+  video          @0;
+  mediaAudio     @1;
+  touch          @2;
+  control        @3;
+  guidanceAudio  @4;
+  systemAudio    @5;
+  data           @6;
+  heartbeat      @7;
 }
 
 struct Envelope {
