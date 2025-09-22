@@ -1,3 +1,9 @@
+# Export files for direct inclusion in other cc_library targets
+exports_files([
+    "duplex_shm_transport.cpp",
+    "duplex_shm_transport.hpp",
+], visibility = ["//visibility:public"])
+
 cc_library(
     name = "duplex_shm_transport",
     srcs = [

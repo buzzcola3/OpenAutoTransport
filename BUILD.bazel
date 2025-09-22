@@ -56,21 +56,25 @@ cc_library(
     name = "open_auto_transport",
     srcs = [
         "transport.cpp",
+        "//shared_memory:duplex_shm_transport.cpp",
     ],
     hdrs = [
         "transport.hpp",
         "wire.hpp",
+        "//shared_memory:duplex_shm_transport.hpp",
     ],
     copts = [
         "-fPIC",
+        "-std=c++17",
     ],
     includes = ["shared_memory"],
     include_prefix = "open_auto_transport",
+    linkopts = ["-pthread"],
     visibility = ["//visibility:public"],
     deps = [
         ":wire_capnp",
-        "//shared_memory:duplex_shm_transport",
         "@boost.asio",
+        "@boost.interprocess",
         "@capnp-cpp//src/capnp:capnp",
         "@capnp-cpp//src/kj:kj",
     ],

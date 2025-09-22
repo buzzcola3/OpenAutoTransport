@@ -14,10 +14,13 @@ OUTDIR=dist-local
 rm -rf "$OUTDIR"
 mkdir -p "$OUTDIR"
 
-echo "Copying essential headers only..."
+echo "Copying essential headers..."
 cp -v "$BAZEL_BIN/wire.capnp.h" "$OUTDIR/"
+cp -v "$BAZEL_BIN/wire.capnp.c++" "$OUTDIR/"
 cp -v wire.hpp "$OUTDIR/"
 cp -v transport.hpp "$OUTDIR/"
+mkdir -p "$OUTDIR/shared_memory"
+cp -v shared_memory/duplex_shm_transport.hpp "$OUTDIR/shared_memory/"
 
 for cfg in "${CONFIGS[@]}"; do
   echo "-- Building //:open_auto_transport with --config=$cfg"

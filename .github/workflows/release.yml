@@ -46,10 +46,13 @@ jobs:
 
           BAZEL_BIN=$(bazel info bazel-bin)
           mkdir -p dist
-          # Copy essential headers only
+          # Copy essential headers
           cp -v "$BAZEL_BIN/wire.capnp.h" dist/
+          cp -v "$BAZEL_BIN/wire.capnp.c++" dist/
           cp -v wire.hpp dist/
           cp -v transport.hpp dist/
+          mkdir -p dist/shared_memory
+          cp -v shared_memory/duplex_shm_transport.hpp dist/shared_memory/
 
           CONFIGS=(amd64_gnu amd64_musl arm64_gnu arm64_musl)
           for cfg in "${CONFIGS[@]}"; do
@@ -129,8 +132,12 @@ jobs:
             - aarch64 (arm64) with musl: arm64_musl
 
             Artifacts include:
-            - libopen_auto_transport-{variant}.a and .so
+            - libopen_auto_transport-{variant}.a and .so (self-contained)
             - open_auto_transport_demo-{variant}
-            - Headers: wire.capnp.h, wire.hpp, transport.hpp
+            - Headers: wire.capnp.h, wire.capnp.c++, wire.hpp, transport.hpp, shared_memory/duplex_shm_transport.hpp
+            
+            Usage options:
+            - Option A: Link libopen_auto_transport-{variant}.a (includes all symbols)
+            - Option B: Compile wire.capnp.c++ yourself (don't use the .a for wire symbols)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
