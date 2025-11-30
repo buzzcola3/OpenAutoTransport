@@ -221,10 +221,13 @@ void Transport::send(buzz::wire::MsgType msgType,
     std::memcpy(slot + headerLen, bytes.begin(), payloadLen);
   }
 
-  if (!shm_->sendSlot(slot, kSlotSize, std::chrono::milliseconds{-1})) {
+  // Non-blocking send: attempt immediate enqueue and drop if ring is full.
+  auto rc = shm_->sendSlot(slot, kSlotSize, std::chrono::milliseconds{0});
+  if (rc != 0) {
     ++dropCount_;
     if ((dropCount_ & 0xFF) == 0) {
-      std::cerr << "[Transport] sendSlot failed (dropCount=" << dropCount_ << ")\n";
+      std::cerr << "[Transport] sendSlot failed rc=" << rc
+                << " (ring full?) dropCount=" << dropCount_ << "\n";
     }
     return;
   }
