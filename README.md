@@ -36,6 +36,12 @@ bazel build //:open_auto_transport
 bazel build //:transport_demo
 ```
 
+To build with the host GCC toolchain instead of the hermetic Zig toolchains:
+
+```bash
+bazel build --config=gcc //:open_auto_transport //:transport_demo
+```
+
 To cross-build for specific Linux variants, pass one of the provided configs:
 
 ```bash

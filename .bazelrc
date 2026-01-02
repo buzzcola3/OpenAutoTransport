@@ -11,6 +11,10 @@ build:arm64_musl --extra_toolchains=@zig_sdk//toolchain:linux_arm64_musl
 build:arm64_gnu --platforms=@zig_sdk//platform:linux_arm64
 build:arm64_gnu --extra_toolchains=@zig_sdk//toolchain:linux_arm64_gnu.2.31
 
+# Build with host GCC/GLIBC toolchain (non-hermetic, uses system compiler)
+build:gcc --platforms=@platforms//host:host
+build:gcc --extra_toolchains=
+
 # Force external capnp .c++ files to compile as C++ (target and host)
 build --per_file_copt=external/capnp-cpp\\+/.*\\.c\\+\\+@-xc++
 build --host_per_file_copt=external/capnp-cpp\\+/.*\\.c\\+\\+@-xc++
