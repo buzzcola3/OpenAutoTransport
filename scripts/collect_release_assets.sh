@@ -10,6 +10,7 @@ bazel build //:wire_capnp_gen
 
 echo "Building and collecting per-variant: ${CONFIGS[*]}"
 BAZEL_BIN=$(bazel info bazel-bin)
+EXEC_ROOT=$(bazel info execution_root)
 OUTDIR=dist-local
 rm -rf "$OUTDIR"
 mkdir -p "$OUTDIR"
@@ -42,6 +43,21 @@ for cfg in "${CONFIGS[@]}"; do
         name="$base"
       fi
       cp -v "$p" "$OUTDIR/${name}-${cfg}${ext}"
+    fi
+  done
+
+  echo "-- Building capnp/kj for $cfg"
+  bazel build --config="$cfg" @capnp-cpp//src/capnp:capnp @capnp-cpp//src/kj:kj
+  CAPNP_LIB="$BAZEL_BIN/external/capnp-cpp/src/capnp/libcapnp.a"
+  KJ_LIB="$BAZEL_BIN/external/capnp-cpp/src/kj/libkj.a"
+  if [[ -f "$CAPNP_LIB" ]]; then cp -v "$CAPNP_LIB" "$OUTDIR/libcapnp-${cfg}.a"; fi
+  if [[ -f "$KJ_LIB" ]]; then cp -v "$KJ_LIB" "$OUTDIR/libkj-${cfg}.a"; fi
+
+  echo "-- Collecting libc++ runtime for $cfg"
+  TOOLCHAIN_LIB_DIR="$EXEC_ROOT/external/hermetic_cc_toolchain++toolchains+zig_config/lib"
+  for lib in libc++.so libc++abi.so libunwind.so libc++.a libc++abi.a libunwind.a; do
+    if [[ -f "$TOOLCHAIN_LIB_DIR/$lib" ]]; then
+      cp -v "$TOOLCHAIN_LIB_DIR/$lib" "$OUTDIR/${lib%.so}-${cfg}.${lib##*.}"
     fi
   done
 

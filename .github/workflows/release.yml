@@ -45,6 +45,7 @@ jobs:
           bazel build //:wire_capnp_gen
 
           BAZEL_BIN=$(bazel info bazel-bin)
+          EXEC_ROOT=$(bazel info execution_root)
           mkdir -p dist
           # Copy essential headers
           cp -v "$BAZEL_BIN/wire.capnp.h" dist/
@@ -105,6 +106,21 @@ jobs:
             else
               cp -v "$picked" "dist/${target_name}-${cfg}"
             fi
+
+            echo "Collecting capnp/kj for $cfg"
+            bazel build --config="$cfg" @capnp-cpp//src/capnp:capnp @capnp-cpp//src/kj:kj
+            CAPNP_LIB="$BAZEL_BIN/external/capnp-cpp/src/capnp/libcapnp.a"
+            KJ_LIB="$BAZEL_BIN/external/capnp-cpp/src/kj/libkj.a"
+            if [[ -f "$CAPNP_LIB" ]]; then cp -v "$CAPNP_LIB" "dist/libcapnp-${cfg}.a"; fi
+            if [[ -f "$KJ_LIB" ]]; then cp -v "$KJ_LIB" "dist/libkj-${cfg}.a"; fi
+
+            echo "Collecting libc++ runtime for $cfg"
+            TOOLCHAIN_LIB_DIR="$EXEC_ROOT/external/hermetic_cc_toolchain++toolchains+zig_config/lib"
+            for lib in libc++.so libc++abi.so libunwind.so libc++.a libc++abi.a libunwind.a; do
+              if [[ -f "$TOOLCHAIN_LIB_DIR/$lib" ]]; then
+                cp -v "$TOOLCHAIN_LIB_DIR/$lib" "dist/${lib%.so}-${cfg}.${lib##*.}"
+              fi
+            done
           done
 
           echo "dist contents:" && (ls -l dist || true)

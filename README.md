@@ -315,6 +315,8 @@ Download the appropriate variant from the latest [GitHub Release](https://github
 - `libopen_auto_transport-{variant}.a` - Static library
 - `libopen_auto_transport-{variant}.so` - Shared library  
 - Header files: `transport.hpp`, `wire.hpp`, `wire.capnp.h`, `wire.capnp.c++`, `shared_memory/duplex_shm_transport.hpp`
+- Runtime/toolchain libs (for hermetic libc++ builds): `libc++`, `libc++abi`, `libunwind` (both .so and .a, per variant)
+- Cap'n Proto libs built against the same libc++: `libcapnp-{variant}.a`, `libkj-{variant}.a`
 - `open_auto_transport_demo-{variant}` - Demo binary
 
 Where `{variant}` is one of: `amd64_gnu`, `amd64_musl`, `arm64_gnu`, `arm64_musl`
@@ -359,7 +361,8 @@ apk add capnproto-dev
 **Option A**: Use prebuilt static library (includes all transport symbols)
 - Link `libopen_auto_transport-{variant}.a`
 - Include the provided headers
-- Link Cap'n Proto: `-lcapnp -lkj -pthread`
+- If you use the hermetic libc++ build (default prebuilt): also link the bundled `libc++`, `libc++abi`, `libunwind`, and the bundled `libcapnp`/`libkj` for that variant: `-lc++ -lc++abi -lunwind -lcapnp -lkj -pthread`
+- If you rebuild with `--config=gcc` locally (libstdc++), link your system capnp/kj and `-lstdc++ -pthread`
 
 **Option B**: Compile Cap'n Proto parts yourself
 - Compile `wire.capnp.c++` in your project
