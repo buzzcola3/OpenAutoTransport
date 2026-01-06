@@ -40,10 +40,18 @@ bool Transport::startAsA(std::chrono::microseconds poll, bool clean) {
   if (running_.load(std::memory_order_relaxed))
     return side_ == Side::A;
 
+  std::cout << "[Transport] startAsA: name=" << kName
+            << " slotSize=" << kSlotSize
+            << " slotCount=" << kSlotCount
+            << " poll(us)=" << poll.count()
+            << " clean=" << (clean ? "true" : "false") << "\n";
+
   try {
     if (clean) {
       duplex_shm_transport::ShmFixedSlotDuplexTransport::remove(kName);
+      std::cout << "[Transport] removed existing SHM (if any) for name=" << kName << "\n";
     }
+    std::cout << "[Transport] creating SHM as Side A...\n";
     shm_ = std::make_unique<duplex_shm_transport::ShmFixedSlotDuplexTransport>(
         kName,
         kSlotSize,
@@ -70,7 +78,12 @@ bool Transport::startAsB(std::chrono::milliseconds wait, std::chrono::microsecon
   if (running_.load(std::memory_order_relaxed))
     return side_ == Side::B;
 
+  std::cout << "[Transport] startAsB: name=" << kName
+            << " wait(ms)=" << wait.count()
+            << " poll(us)=" << poll.count() << "\n";
+
   try {
+    std::cout << "[Transport] opening SHM as Side B (waiting up to " << wait.count() << " ms)...\n";
     auto opened = duplex_shm_transport::ShmFixedSlotDuplexTransport::open(
         kName,
         wait,
