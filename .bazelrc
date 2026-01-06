@@ -18,3 +18,7 @@ build:gcc --extra_toolchains=
 # Force external capnp .c++ files to compile as C++ (target and host)
 build --per_file_copt=external/capnp-cpp\\+/.*\\.c\\+\\+@-xc++
 build --host_per_file_copt=external/capnp-cpp\\+/.*\\.c\\+\\+@-xc++
+
+# Ensure all C++ objects are PIC so shared libs (e.g., capnp) link under musl/clang
+build --copt=-fPIC
+build --cxxopt=-fPIC
