@@ -109,8 +109,8 @@ jobs:
 
             echo "Collecting capnp/kj for $cfg"
             bazel build --config="$cfg" @capnp-cpp//src/capnp:capnp @capnp-cpp//src/kj:kj
-            CAPNP_LIB="$BAZEL_BIN/external/capnp-cpp/src/capnp/libcapnp.a"
-            KJ_LIB="$BAZEL_BIN/external/capnp-cpp/src/kj/libkj.a"
+            CAPNP_LIB="$BAZEL_BIN/external/capnp-cpp+/src/capnp/libcapnp.a"
+            KJ_LIB="$BAZEL_BIN/external/capnp-cpp+/src/kj/libkj.a"
             if [[ -f "$CAPNP_LIB" ]]; then cp -v "$CAPNP_LIB" "dist/libcapnp-${cfg}.a"; fi
             if [[ -f "$KJ_LIB" ]]; then cp -v "$KJ_LIB" "dist/libkj-${cfg}.a"; fi
 
@@ -118,7 +118,9 @@ jobs:
             TOOLCHAIN_LIB_DIR="$EXEC_ROOT/external/hermetic_cc_toolchain++toolchains+zig_config/lib"
             for lib in libc++.so libc++abi.so libunwind.so libc++.a libc++abi.a libunwind.a; do
               if [[ -f "$TOOLCHAIN_LIB_DIR/$lib" ]]; then
-                cp -v "$TOOLCHAIN_LIB_DIR/$lib" "dist/${lib%.so}-${cfg}.${lib##*.}"
+                base="${lib%.*}"
+                ext="${lib##*.}"
+                cp -v "$TOOLCHAIN_LIB_DIR/$lib" "dist/${base}-${cfg}.${ext}"
               fi
             done
           done
@@ -150,10 +152,13 @@ jobs:
             Artifacts include:
             - libopen_auto_transport-{variant}.a and .so (self-contained)
             - open_auto_transport_demo-{variant}
+            - Cap'n Proto libs: libcapnp-{variant}.a, libkj-{variant}.a
+            - libc++ runtimes: libc++-{variant}.so/.a, libc++abi-{variant}.so/.a, libunwind-{variant}.so/.a
             - Headers: wire.capnp.h, wire.capnp.c++, wire.hpp, transport.hpp, shared_memory/duplex_shm_transport.hpp
             
             Usage options:
             - Option A: Link libopen_auto_transport-{variant}.a (includes all symbols)
             - Option B: Compile wire.capnp.c++ yourself (don't use the .a for wire symbols)
+            - If you link the bundled libc++ runtimes, add: -Wl,-rpath,'$ORIGIN' -lc++ -lc++abi -lunwind -lcapnp -lkj -pthread
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
