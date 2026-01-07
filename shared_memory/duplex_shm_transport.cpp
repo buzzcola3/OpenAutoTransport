@@ -178,24 +178,51 @@ struct ShmFixedSlotDuplexTransport::Impl {
 
         std::string a2b = base + ".fs.a2b";
         std::string b2a = base + ".fs.b2a";
-        if (truncate) {
-            bip::shared_memory_object::remove(a2b.c_str());
-            bip::shared_memory_object::remove(b2a.c_str());
-        }
         auto alloc_bytes = [&](uint64_t) {
             return static_cast<uint64_t>(sizeof(SlotHeader)) + sSize * sCount + 4096;
         };
-        seg_tx = std::make_unique<bip::managed_shared_memory>(
-            bip::create_only, a2b.c_str(), alloc_bytes(sSize * sCount));
-        seg_rx = std::make_unique<bip::managed_shared_memory>(
-            bip::create_only, b2a.c_str(), alloc_bytes(sSize * sCount));
-        tx = create_region(*seg_tx, slotSize, slotCount);
-        rx = create_region(*seg_rx, slotSize, slotCount);
-        // Set A side poll interval in both headers (duplication)
-        tx.hdr->pollIntervalAUs.store(static_cast<uint32_t>(initialPoll.count()), std::memory_order_relaxed);
-        rx.hdr->pollIntervalAUs.store(static_cast<uint32_t>(initialPoll.count()), std::memory_order_relaxed);
-        tx.hdr->ready = 1;
-        rx.hdr->ready = 1;
+
+        bool reused = false;
+        if (!truncate) {
+            try {
+                // Try to reuse existing segments (if slot layout matches)
+                auto rx_existing = std::make_unique<bip::managed_shared_memory>(bip::open_only, a2b.c_str());
+                auto tx_existing = std::make_unique<bip::managed_shared_memory>(bip::open_only, b2a.c_str());
+                auto rx_lay = open_region(*rx_existing);
+                auto tx_lay = open_region(*tx_existing);
+                const bool layout_ok = rx_lay.hdr && tx_lay.hdr &&
+                    rx_lay.hdr->slotSize == slotSize && rx_lay.hdr->slotCount == slotCount &&
+                    tx_lay.hdr->slotSize == slotSize && tx_lay.hdr->slotCount == slotCount;
+                if (layout_ok) {
+                    seg_rx = std::move(rx_existing);
+                    seg_tx = std::move(tx_existing);
+                    rx = rx_lay;
+                    tx = tx_lay;
+                    reused = true;
+                }
+            } catch (...) {
+                // fall through to create fresh segments
+            }
+        }
+
+        if (!reused) {
+            if (truncate) {
+                bip::shared_memory_object::remove(a2b.c_str());
+                bip::shared_memory_object::remove(b2a.c_str());
+            }
+            seg_tx = std::make_unique<bip::managed_shared_memory>(
+                bip::create_only, a2b.c_str(), alloc_bytes(sSize * sCount));
+            seg_rx = std::make_unique<bip::managed_shared_memory>(
+                bip::create_only, b2a.c_str(), alloc_bytes(sSize * sCount));
+            tx = create_region(*seg_tx, slotSize, slotCount);
+            rx = create_region(*seg_rx, slotSize, slotCount);
+            // Set A side poll interval in both headers (duplication)
+            tx.hdr->pollIntervalAUs.store(static_cast<uint32_t>(initialPoll.count()), std::memory_order_relaxed);
+            rx.hdr->pollIntervalAUs.store(static_cast<uint32_t>(initialPoll.count()), std::memory_order_relaxed);
+            tx.hdr->ready = 1;
+            rx.hdr->ready = 1;
+        }
+
         if (callback) startThread();
     }
 

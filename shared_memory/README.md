@@ -7,7 +7,7 @@ Designed for two processes exchanging uniformly sized messages with low latency 
 
 ## Core Concept
 
-Side A (the “master”) can keep the existing channel or truncate it. By default it keeps the existing shared memory segments; pass `truncateExisting=true` (or use the transport API’s `clean` flag) to force a fresh channel.  
+Side A (the “master”) can keep the existing channel or truncate it. By default it keeps the existing shared memory segments and reuses them if the layout matches (slot size/count). Pass `truncateExisting=true` (or use the transport API’s `clean` flag) to force a fresh channel.  
 Side B (the “follower”) only opens an existing channel; it never truncates.
 
 Allocated shared memory segments:
