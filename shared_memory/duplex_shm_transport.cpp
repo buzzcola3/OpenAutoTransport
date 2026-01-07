@@ -26,6 +26,7 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include <iostream>
 
 #if defined(__x86_64__) || defined(__i386__)
 #include <immintrin.h>
@@ -275,6 +276,7 @@ struct ShmFixedSlotDuplexTransport::Impl {
         uint64_t idx = head & h->slotMask;
         uint8_t* ptr = rx.buf + idx * h->slotSize;
         h->head.store(head + 1, std::memory_order_release);
+        std::cout << "[SHM] RX slot=" << idx << " size=" << h->slotSize << "\n";
         if (callback) callback(ptr, h->slotSize);
         return true;
     }
