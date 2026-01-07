@@ -125,6 +125,7 @@ uint32_t slot_write(SlotLayout lay, const uint8_t* src,
             uint64_t idx = tail & h->slotMask;
             std::memcpy(lay.buf + idx * h->slotSize, src, h->slotSize);
             h->tail.store(tail + 1, std::memory_order_release);
+            std::cout << "[SHM] TX slot=" << idx << " size=" << h->slotSize << "\n";
             return 1;
         }
         if (h->shutdown) return 0;
