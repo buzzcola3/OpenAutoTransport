@@ -186,8 +186,9 @@ struct ShmFixedSlotDuplexTransport::Impl {
         if (!truncate) {
             try {
                 // Try to reuse existing segments (if slot layout matches)
-                auto rx_existing = std::make_unique<bip::managed_shared_memory>(bip::open_only, a2b.c_str());
-                auto tx_existing = std::make_unique<bip::managed_shared_memory>(bip::open_only, b2a.c_str());
+                // Note: rx is b2a (B->A) and tx is a2b (A->B).
+                auto rx_existing = std::make_unique<bip::managed_shared_memory>(bip::open_only, b2a.c_str());
+                auto tx_existing = std::make_unique<bip::managed_shared_memory>(bip::open_only, a2b.c_str());
                 auto rx_lay = open_region(*rx_existing);
                 auto tx_lay = open_region(*tx_existing);
                 const bool layout_ok = rx_lay.hdr && tx_lay.hdr &&
@@ -198,6 +199,13 @@ struct ShmFixedSlotDuplexTransport::Impl {
                     seg_tx = std::move(tx_existing);
                     rx = rx_lay;
                     tx = tx_lay;
+                    // Clear shutdown flags and refresh A-side poll interval when reusing.
+                    rx.hdr->shutdown = 0;
+                    tx.hdr->shutdown = 0;
+                    rx.hdr->ready = 1;
+                    tx.hdr->ready = 1;
+                    rx.hdr->pollIntervalAUs.store(static_cast<uint32_t>(initialPoll.count()), std::memory_order_relaxed);
+                    tx.hdr->pollIntervalAUs.store(static_cast<uint32_t>(initialPoll.count()), std::memory_order_relaxed);
                     reused = true;
                 }
             } catch (...) {
