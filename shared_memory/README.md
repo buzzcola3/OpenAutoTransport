@@ -7,7 +7,7 @@ Designed for two processes exchanging uniformly sized messages with low latency 
 
 ## Core Concept
 
-Side A (the “master”) creates a fresh channel every run. It always deletes (truncates) any stale shared memory segments before creating new ones.  
+Side A (the “master”) can keep the existing channel or truncate it. By default it keeps the existing shared memory segments; pass `truncateExisting=true` (or use the transport API’s `clean` flag) to force a fresh channel.  
 Side B (the “follower”) only opens an existing channel; it never truncates.
 
 Allocated shared memory segments:
@@ -62,12 +62,13 @@ Values:
 ```cpp
 class ShmFixedSlotDuplexTransport {
 public:
-    // Side A (creator): always truncates any old segments of the same name.
+    // Side A (creator): optionally truncates old segments; defaults to keeping them.
     ShmFixedSlotDuplexTransport(const std::string& name,
                                 uint64_t slotSize,
                                 uint64_t slotCount,              // power-of-two
                                 std::function<void(const uint8_t*, uint64_t)> callback,
-                                std::chrono::microseconds initialPoll = std::chrono::milliseconds(1));
+                                std::chrono::microseconds initialPoll = std::chrono::milliseconds(1),
+                                bool truncateExisting = false);
 
     // Side B (opener): waits up to 'wait' for A.
     static ShmFixedSlotDuplexTransport open(const std::string& name,

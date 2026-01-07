@@ -31,7 +31,8 @@ public:
                                 uint64_t slotSize,
                                 uint64_t slotCount,
                                 std::function<void(const uint8_t*, uint64_t)> callback,
-                                std::chrono::microseconds initialPoll = std::chrono::milliseconds(1));
+                                std::chrono::microseconds initialPoll = std::chrono::milliseconds(1),
+                                bool truncateExisting = false);
 
     static ShmFixedSlotDuplexTransport open(const std::string& name,
                                             std::chrono::milliseconds wait,

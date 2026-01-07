@@ -53,11 +53,12 @@ bool Transport::startAsA(std::chrono::microseconds poll, bool clean) {
     }
     std::cout << "[Transport] creating SHM as Side A...\n";
     shm_ = std::make_unique<duplex_shm_transport::ShmFixedSlotDuplexTransport>(
-        kName,
-        kSlotSize,
-        kSlotCount,
-        [this](const uint8_t* data, uint64_t len) { this->handleIncomingSlot(data, len); },
-        poll
+      kName,
+      kSlotSize,
+      kSlotCount,
+      [this](const uint8_t* data, uint64_t len) { this->handleIncomingSlot(data, len); },
+      poll,
+      /*truncateExisting=*/clean
     );
     running_.store(true, std::memory_order_relaxed);
     side_ = Side::A;

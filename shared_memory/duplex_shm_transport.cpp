@@ -289,11 +289,12 @@ ShmFixedSlotDuplexTransport::ShmFixedSlotDuplexTransport(const std::string& name
                                                          uint64_t slotSize,
                                                          uint64_t slotCount,
                                                          std::function<void(const uint8_t*, uint64_t)> callback,
-                                                         std::chrono::microseconds initialPoll)
+                                                         std::chrono::microseconds initialPoll,
+                                                         bool truncateExisting)
     : p_(new Impl(name,
                   slotSize,
                   slotCount,
-                  /*forceTruncate=*/true,   // always truncate for side A
+                  truncateExisting ? 1u : 0u,
                   std::move(callback),
                   initialPoll)) {}
 
