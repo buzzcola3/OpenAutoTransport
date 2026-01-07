@@ -166,11 +166,11 @@ void Transport::handleIncomingSlot(const uint8_t* data, uint64_t len) {
     auto dataSection = env.getData();
     auto msgType = static_cast<buzz::wire::MsgType>(capType);
 
-    std::cout << "[Transport] RX side="
-              << (side_ == Side::A ? "A" : (side_ == Side::B ? "B" : "?"))
-              << " type=" << static_cast<uint32_t>(msgType)
-              << " ts=" << ts
-              << " bytes=" << dataSection.size() << "\n";
+//    std::cout << "[Transport] RX side="
+//              << (side_ == Side::A ? "A" : (side_ == Side::B ? "B" : "?"))
+//              << " type=" << static_cast<uint32_t>(msgType)
+//              << " ts=" << ts
+//              << " bytes=" << dataSection.size() << "\n";
 
     std::vector<Handler> handlers;
     {

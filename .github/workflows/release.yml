@@ -55,9 +55,18 @@ jobs:
           mkdir -p dist/shared_memory
           cp -v shared_memory/duplex_shm_transport.hpp dist/shared_memory/
 
-          CONFIGS=(amd64_gnu amd64_musl arm64_gnu arm64_musl)
+          CONFIGS=(amd64_gnu amd64_musl arm64_gnu arm64_musl gcc)
+
+          variant_for_cfg() {
+            case "$1" in
+              gcc) echo "amd64_gcc" ;;
+              *) echo "$1" ;;
+            esac
+          }
+
           for cfg in "${CONFIGS[@]}"; do
-            echo "== Config: $cfg =="
+            variant=$(variant_for_cfg "$cfg")
+            echo "== Config: $cfg (variant ${variant}) =="
             echo "Building //:open_auto_transport"
             bazel build --config="$cfg" //:open_auto_transport
 
@@ -77,7 +86,7 @@ jobs:
                   ext=""
                   name="$base"
                 fi
-                cp -v "$p" "dist/${name}-${cfg}${ext}"
+                cp -v "$p" "dist/${name}-${variant}${ext}"
               fi
             done
 
@@ -101,28 +110,32 @@ jobs:
             fi
             if [[ -z "$picked" ]]; then
               for p in "${DEMO_PATHS[@]}"; do
-                if [[ -f "$p" ]]; then cp -v "$p" "dist/${target_name}-${cfg}-misc-$(basename "$p")"; fi
+                if [[ -f "$p" ]]; then cp -v "$p" "dist/${target_name}-${variant}-misc-$(basename "$p")"; fi
               done
             else
-              cp -v "$picked" "dist/${target_name}-${cfg}"
+              cp -v "$picked" "dist/${target_name}-${variant}"
             fi
 
             echo "Collecting capnp/kj for $cfg"
             bazel build --config="$cfg" @capnp-cpp//src/capnp:capnp @capnp-cpp//src/kj:kj
             CAPNP_LIB="$BAZEL_BIN/external/capnp-cpp+/src/capnp/libcapnp.a"
             KJ_LIB="$BAZEL_BIN/external/capnp-cpp+/src/kj/libkj.a"
-            if [[ -f "$CAPNP_LIB" ]]; then cp -v "$CAPNP_LIB" "dist/libcapnp-${cfg}.a"; fi
-            if [[ -f "$KJ_LIB" ]]; then cp -v "$KJ_LIB" "dist/libkj-${cfg}.a"; fi
+            if [[ -f "$CAPNP_LIB" ]]; then cp -v "$CAPNP_LIB" "dist/libcapnp-${variant}.a"; fi
+            if [[ -f "$KJ_LIB" ]]; then cp -v "$KJ_LIB" "dist/libkj-${variant}.a"; fi
 
-            echo "Collecting libc++ runtime for $cfg"
-            TOOLCHAIN_LIB_DIR="$EXEC_ROOT/external/hermetic_cc_toolchain++toolchains+zig_config/lib"
-            for lib in libc++.so libc++abi.so libunwind.so libc++.a libc++abi.a libunwind.a; do
-              if [[ -f "$TOOLCHAIN_LIB_DIR/$lib" ]]; then
-                base="${lib%.*}"
-                ext="${lib##*.}"
-                cp -v "$TOOLCHAIN_LIB_DIR/$lib" "dist/${base}-${cfg}.${ext}"
-              fi
-            done
+            if [[ "$cfg" != "gcc" ]]; then
+              echo "Collecting libc++ runtime for $variant"
+              TOOLCHAIN_LIB_DIR="$EXEC_ROOT/external/hermetic_cc_toolchain++toolchains+zig_config/lib"
+              for lib in libc++.so libc++abi.so libunwind.so libc++.a libc++abi.a libunwind.a; do
+                if [[ -f "$TOOLCHAIN_LIB_DIR/$lib" ]]; then
+                  base="${lib%.*}"
+                  ext="${lib##*.}"
+                  cp -v "$TOOLCHAIN_LIB_DIR/$lib" "dist/${base}-${variant}.${ext}"
+                fi
+              done
+            else
+              echo "Skipping libc++ runtime for $variant (uses libstdc++)"
+            fi
           done
 
           echo "dist contents:" && (ls -l dist || true)
@@ -145,6 +158,7 @@ jobs:
 
             Supported Linux variants (prebuilt):
             - x86_64 (amd64) with glibc: amd64_gnu
+            - x86_64 (amd64) with glibc + libstdc++ (host GCC): amd64_gcc
             - x86_64 (amd64) with musl: amd64_musl
             - aarch64 (arm64) with glibc: arm64_gnu
             - aarch64 (arm64) with musl: arm64_musl
@@ -153,12 +167,13 @@ jobs:
             - libopen_auto_transport-{variant}.a and .so (self-contained)
             - open_auto_transport_demo-{variant}
             - Cap'n Proto libs: libcapnp-{variant}.a, libkj-{variant}.a
-            - libc++ runtimes: libc++-{variant}.so/.a, libc++abi-{variant}.so/.a, libunwind-{variant}.so/.a
+            - libc++ runtimes: libc++-{variant}.so/.a, libc++abi-{variant}.so/.a, libunwind-{variant}.so/.a (libc++ variants only; not emitted for amd64_gcc)
             - Headers: wire.capnp.h, wire.capnp.c++, wire.hpp, transport.hpp, shared_memory/duplex_shm_transport.hpp
             
             Usage options:
             - Option A: Link libopen_auto_transport-{variant}.a (includes all symbols)
             - Option B: Compile wire.capnp.c++ yourself (don't use the .a for wire symbols)
             - If you link the bundled libc++ runtimes, add: -Wl,-rpath,'$ORIGIN' -lc++ -lc++abi -lunwind -lcapnp -lkj -pthread
+            - For amd64_gcc (libstdc++), link with -lstdc++ -pthread (capnp/kj are built with libstdc++)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

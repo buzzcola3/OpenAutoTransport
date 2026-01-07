@@ -1,9 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Mirror CI: build headers and four library variants, then collect artifacts to dist-local/
+# Mirror CI: build headers and library variants, then collect artifacts to dist-local/
+# Includes a host GCC/libstdc++ build (amd64_gcc) plus hermetic libc++ variants.
 
-CONFIGS=(amd64_gnu amd64_musl arm64_gnu arm64_musl)
+CONFIGS=(amd64_gnu amd64_musl arm64_gnu arm64_musl gcc)
+
+variant_for_cfg() {
+  case "$1" in
+    gcc) echo "amd64_gcc" ;;
+    *) echo "$1" ;;
+  esac
+}
 
 echo "Building codegen once..."
 bazel build //:wire_capnp_gen
@@ -24,9 +32,11 @@ mkdir -p "$OUTDIR/shared_memory"
 cp -v shared_memory/duplex_shm_transport.hpp "$OUTDIR/shared_memory/"
 
 for cfg in "${CONFIGS[@]}"; do
+  variant=$(variant_for_cfg "$cfg")
+
   echo "-- Building //:open_auto_transport with --config=$cfg"
   bazel build --config="$cfg" //:open_auto_transport
-  echo "-- Collecting libraries for $cfg"
+  echo "-- Collecting libraries for $variant"
   mapfile -t LIB_PATHS < <(bazel cquery --config="$cfg" //:open_auto_transport --output=starlark --starlark:expr='"\n".join([f.path for f in target.files.to_list()])')
   if [[ ${#LIB_PATHS[@]} -eq 0 ]]; then
     echo "ERROR: No artifacts for //:open_auto_transport under --config=$cfg" >&2
@@ -42,7 +52,7 @@ for cfg in "${CONFIGS[@]}"; do
         ext=""
         name="$base"
       fi
-      cp -v "$p" "$OUTDIR/${name}-${cfg}${ext}"
+      cp -v "$p" "$OUTDIR/${name}-${variant}${ext}"
     fi
   done
 
@@ -50,18 +60,22 @@ for cfg in "${CONFIGS[@]}"; do
   bazel build --config="$cfg" @capnp-cpp//src/capnp:capnp @capnp-cpp//src/kj:kj
   CAPNP_LIB="$BAZEL_BIN/external/capnp-cpp+/src/capnp/libcapnp.a"
   KJ_LIB="$BAZEL_BIN/external/capnp-cpp+/src/kj/libkj.a"
-  if [[ -f "$CAPNP_LIB" ]]; then cp -v "$CAPNP_LIB" "$OUTDIR/libcapnp-${cfg}.a"; fi
-  if [[ -f "$KJ_LIB" ]]; then cp -v "$KJ_LIB" "$OUTDIR/libkj-${cfg}.a"; fi
+  if [[ -f "$CAPNP_LIB" ]]; then cp -v "$CAPNP_LIB" "$OUTDIR/libcapnp-${variant}.a"; fi
+  if [[ -f "$KJ_LIB" ]]; then cp -v "$KJ_LIB" "$OUTDIR/libkj-${variant}.a"; fi
 
-  echo "-- Collecting libc++ runtime for $cfg"
-  TOOLCHAIN_LIB_DIR="$EXEC_ROOT/external/hermetic_cc_toolchain++toolchains+zig_config/lib"
-  for lib in libc++.so libc++abi.so libunwind.so libc++.a libc++abi.a libunwind.a; do
-    if [[ -f "$TOOLCHAIN_LIB_DIR/$lib" ]]; then
-      base="${lib%.*}"
-      ext="${lib##*.}"
-      cp -v "$TOOLCHAIN_LIB_DIR/$lib" "$OUTDIR/${base}-${cfg}.${ext}"
-    fi
-  done
+  if [[ "$cfg" != "gcc" ]]; then
+    echo "-- Collecting libc++ runtime for $variant"
+    TOOLCHAIN_LIB_DIR="$EXEC_ROOT/external/hermetic_cc_toolchain++toolchains+zig_config/lib"
+    for lib in libc++.so libc++abi.so libunwind.so libc++.a libc++abi.a libunwind.a; do
+      if [[ -f "$TOOLCHAIN_LIB_DIR/$lib" ]]; then
+        base="${lib%.*}"
+        ext="${lib##*.}"
+        cp -v "$TOOLCHAIN_LIB_DIR/$lib" "$OUTDIR/${base}-${variant}.${ext}"
+      fi
+    done
+  else
+    echo "-- Skipping libc++ runtime collection for $variant (uses libstdc++)"
+  fi
 
   echo "-- Building //:open_auto_transport_demo with --config=$cfg"
   bazel build --config="$cfg" //:open_auto_transport_demo
@@ -78,11 +92,11 @@ for cfg in "${CONFIGS[@]}"; do
     done
   fi
   if [[ -n "$picked" ]]; then
-    cp -v "$picked" "$OUTDIR/${target_name}-${cfg}"
+    cp -v "$picked" "$OUTDIR/${target_name}-${variant}"
   else
     echo "WARN: Could not identify demo binary for $cfg; dumping all files"
     for p in "${DEMO_PATHS[@]}"; do
-      if [[ -f "$p" ]]; then cp -v "$p" "$OUTDIR/${target_name}-${cfg}-misc-$(basename "$p")"; fi
+      if [[ -f "$p" ]]; then cp -v "$p" "$OUTDIR/${target_name}-${variant}-misc-$(basename "$p")"; fi
     done
   fi
 done
