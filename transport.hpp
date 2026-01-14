@@ -24,6 +24,7 @@
 #include <memory>
 #include <vector>
 #include <chrono>
+#include <type_traits>
 #include "wire.hpp"
 #include <unordered_map>
 #include <mutex>
@@ -36,6 +37,16 @@ namespace buzz::autoapp::Transport {
 class Transport {
 public:
   using Handler = std::function<void(uint64_t, const void*, std::size_t)>;
+
+  struct TouchEventPayload {
+    float x;
+    float y;
+    uint32_t pointerId;
+    uint32_t action;
+  };
+  static_assert(sizeof(TouchEventPayload) == 16, "TouchEventPayload must stay 16 bytes");
+  static_assert(std::is_trivially_copyable<TouchEventPayload>::value,
+                "TouchEventPayload must be trivially copyable");
 
   enum class Side { Unknown, A, B };
 
@@ -54,6 +65,8 @@ public:
             uint64_t timestampUsec,
             const void* data,
             size_t size);
+
+  void sendTouch(uint64_t timestampUsec, TouchEventPayload event);
 
   uint64_t sentCount() const noexcept { return sendCount_; }
   uint64_t dropCount() const noexcept { return dropCount_; }

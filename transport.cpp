@@ -167,11 +167,11 @@ void Transport::handleIncomingSlot(const uint8_t* data, uint64_t len) {
     auto dataSection = env.getData();
     auto msgType = static_cast<buzz::wire::MsgType>(capType);
 
-//    std::cout << "[Transport] RX side="
-//              << (side_ == Side::A ? "A" : (side_ == Side::B ? "B" : "?"))
-//              << " type=" << static_cast<uint32_t>(msgType)
-//              << " ts=" << ts
-//              << " bytes=" << dataSection.size() << "\n";
+    std::cout << "[Transport] RX side="
+              << (side_ == Side::A ? "A" : (side_ == Side::B ? "B" : "?"))
+              << " msgType=" << static_cast<uint32_t>(msgType)
+              << " ts=" << ts
+              << " bytes=" << dataSection.size() << "\n";
 
     std::vector<Handler> handlers;
     {
@@ -246,12 +246,19 @@ void Transport::send(buzz::wire::MsgType msgType,
     return;
   }
 
+  std::cout << "[Transport] TX msgType=" << static_cast<int>(msgType) 
+            << " payloadLen=" << payloadLen << "\n";
   ++sendCount_;
   if ((sendCount_ & 0xFF) == 0) {
     std::cout << "[Transport] sent=" << sendCount_
               << " lastSize=" << payloadLen
               << " drops=" << dropCount_ << "\n";
   }
+}
+
+void Transport::sendTouch(uint64_t timestampUsec, TouchEventPayload event) {
+  // Forward as a fixed 16-byte payload; caller is responsible for normalization if needed.
+  send(::MsgType::TOUCH, timestampUsec, &event, sizeof(event));
 }
 
 } // namespace buzz::autoapp::Transport
