@@ -9,7 +9,7 @@ enum MsgType {
   control        @3;
   guidanceAudio  @4;
   systemAudio    @5;
-  data           @6;
+  sensor         @6;
   heartbeat      @7;
 }
 
