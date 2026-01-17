@@ -246,8 +246,8 @@ void Transport::send(buzz::wire::MsgType msgType,
     return;
   }
 
-  std::cout << "[Transport] TX msgType=" << static_cast<int>(msgType) 
-            << " payloadLen=" << payloadLen << "\n";
+  // std::cout << "[Transport] TX msgType=" << static_cast<int>(msgType) 
+  //           << " payloadLen=" << payloadLen << "\n";
   ++sendCount_;
   if ((sendCount_ & 0xFF) == 0) {
     std::cout << "[Transport] sent=" << sendCount_
