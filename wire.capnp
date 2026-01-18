@@ -11,6 +11,7 @@ enum MsgType {
   systemAudio    @5;
   sensor         @6;
   heartbeat      @7;
+  microphoneAudio @8;
 }
 
 struct Envelope {
