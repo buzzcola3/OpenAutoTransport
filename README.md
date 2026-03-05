@@ -286,8 +286,10 @@ Available message types defined in `buzz::wire::MsgType`:
 - `CONTROL` - Control/command messages
 - `GUIDANCE_AUDIO` - Navigation/GPS audio guidance
 - `SYSTEM_AUDIO` - System sounds and alerts
+- `SENSOR` - Sensor and telemetry messages
 - `HEARTBEAT` - Keep-alive and status messages
 - `MICROPHONE_AUDIO` - Uplink microphone capture audio
+- `CONFIGURATION` - Configuration and settings messages
 
 Add custom types by extending the `wire.capnp` schema
 
