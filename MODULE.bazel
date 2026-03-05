@@ -13,7 +13,8 @@ toolchains = use_extension(
 )
 use_repo(toolchains, "zig_sdk")
 
+bazel_dep(name = "rules_cc", version = "0.2.14")
 bazel_dep(name = "capnp-cpp", version = "1.1.0")
 bazel_dep(name = "boost.asio", version = "1.87.0.bcr.1")
 bazel_dep(name = "boost.interprocess", version = "1.87.0")
-bazel_dep(name = "platforms", version = "0.0.11")
+bazel_dep(name = "platforms", version = "1.0.0")

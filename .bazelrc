@@ -1,3 +1,6 @@
+# Re-enable cc rule autoloading for dependencies not yet Bazel 9 compatible (e.g. capnp-cpp)
+build --incompatible_autoload_externally=+@rules_cc
+
 # Default: use Bazel's host toolchain (no forced config). Use --config=gcc explicitly if you want host GCC/libstdc++.
 
 # Platform configs for cross-compilation

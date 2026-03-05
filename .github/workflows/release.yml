@@ -21,10 +21,10 @@ jobs:
           fetch-depth: 0
 
       - name: Cache Bazel output
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/bazel
-          key: ${{ runner.os }}-bazel-${{ hashFiles('**/WORKSPACE') }}
+          key: ${{ runner.os }}-bazel-${{ hashFiles('.bazelversion', 'MODULE.bazel', '.bazelrc', 'WORKSPACE') }}
           restore-keys: |
             ${{ runner.os }}-bazel-
 
