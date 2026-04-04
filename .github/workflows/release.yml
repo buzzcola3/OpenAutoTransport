@@ -42,7 +42,7 @@ jobs:
         run: |
           set -euo pipefail
           # Build headers once (not arch/libc specific)
-          bazel build //:wire_capnp_gen
+          bazel build //:wire_capnp_gen //:config_capnp_gen
 
           BAZEL_BIN=$(bazel info bazel-bin)
           EXEC_ROOT=$(bazel info execution_root)
@@ -50,7 +50,11 @@ jobs:
           # Copy essential headers
           cp -v "$BAZEL_BIN/wire.capnp.h" dist/
           cp -v "$BAZEL_BIN/wire.capnp.c++" dist/
+          cp -v "$BAZEL_BIN/config.capnp.h" dist/
+          cp -v "$BAZEL_BIN/config.capnp.c++" dist/
           cp -v wire.hpp dist/
+          cp -v config.hpp dist/
+          cp -v config_rpc.hpp dist/
           cp -v transport.hpp dist/
           mkdir -p dist/shared_memory
           cp -v shared_memory/duplex_shm_transport.hpp dist/shared_memory/
