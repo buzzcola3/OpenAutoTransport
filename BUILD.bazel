@@ -54,71 +54,13 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 
-# ── Config RPC schema ─────────────────────────────────────────────────
-
-genrule(
-    name = "config_capnp_gen",
-    srcs = ["config.capnp"],
-    outs = [
-        "config.capnp.h",
-        "config.capnp.c++",
-    ],
-    tools = [
-        "@capnp-cpp//src/capnp:capnp_tool",
-        "@capnp-cpp//src/capnp:capnpc-c++",
-    ],
-    cmd = """
-      set -euo pipefail
-      SRC="$(location :config.capnp)"
-      SRCDIR="$$(dirname "$$SRC")"
-      OUTDIR="$(@D)"
-      CAPNP_BIN="$(execpath @capnp-cpp//src/capnp:capnp_tool)"
-      CAPNPC_PLUGIN="$(execpath @capnp-cpp//src/capnp:capnpc-c++)"
-
-      mkdir -p "$$OUTDIR"
-      "$$CAPNP_BIN" compile \
-        --src-prefix="$$SRCDIR" \
-        -o"$$CAPNPC_PLUGIN":"$$OUTDIR" \
-        "$$SRC"
-
-      test -f "$$OUTDIR/config.capnp.h"
-      test -f "$$OUTDIR/config.capnp.c++"
-    """,
-    visibility = ["//visibility:public"],
-)
-
-filegroup(
-    name = "config_capnp_generated",
-    srcs = [
-        "config.capnp.h",
-        "config.capnp.c++",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-cc_library(
-    name = "config_capnp",
-    srcs = ["config.capnp.c++"],
-    hdrs = ["config.capnp.h"],
-    copts = ["-xc++"],
-    deps = [
-        "@capnp-cpp//src/capnp:capnp",
-        "@capnp-cpp//src/capnp:capnp-rpc",
-        "@capnp-cpp//src/kj:kj",
-    ],
-    visibility = ["//visibility:public"],
-)
-
 cc_library(
     name = "open_auto_transport",
     srcs = [
-        "config_rpc.cpp",
         "transport.cpp",
         "//shared_memory:duplex_shm_transport.cpp",
     ],
     hdrs = [
-        "config.hpp",
-        "config_rpc.hpp",
         "transport.hpp",
         "wire.hpp",
         "//shared_memory:duplex_shm_transport.hpp",
@@ -132,14 +74,11 @@ cc_library(
     linkopts = ["-pthread"],
     visibility = ["//visibility:public"],
     deps = [
-        ":config_capnp",
         ":wire_capnp",
         "@boost.asio",
         "@boost.interprocess",
         "@capnp-cpp//src/capnp:capnp",
-        "@capnp-cpp//src/capnp:capnp-rpc",
         "@capnp-cpp//src/kj:kj",
-        "@capnp-cpp//src/kj:kj-async",
     ],
 )
 
